@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calcolo Interesse Composto</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; }
+    .container { max-width: 600px; margin: auto; }
+    input, button { display: block; width: 100%; margin: 10px 0; padding: 8px; }
+    .result { margin-top: 20px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Calcolo Interesse Composto</h2>
+    <label>Investimento iniziale (€):</label>
+    <input type="number" id="investimento" placeholder="Es. 1000">
+    
+    <label>Risparmio mensile (€):</label>
+    <input type="number" id="risparmio" placeholder="Es. 100">
+    
+    <label>Crescita annuale (%):</label>
+    <input type="number" id="crescita" placeholder="Es. 10">
+    
+    <label>Durata (anni):</label>
+    <input type="number" id="anni" placeholder="Es. 10">
+    
+    <button onclick="calcolaInteresse()">Calcola</button>
+    <button onclick="salvaDati()">Salva</button>
+    
+    <div class="result" id="risultato"></div>
+    <!-- Canvas per il grafico -->
+    <canvas id="myChart" width="400" height="200"></canvas>
+  </div>
+
+  <!-- Includiamo Chart.js da CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    let myChart;
+    
+    function calcolaInteresse() {
+      let investimento = parseFloat(document.getElementById("investimento").value);
+      let risparmio = parseFloat(document.getElementById("risparmio").value);
+      let crescita = parseFloat(document.getElementById("crescita").value) / 100;
+      let anni = parseInt(document.getElementById("anni").value);
+      
+      // Validazione degli input
+      if (isNaN(investimento) || isNaN(risparmio) || isNaN(crescita) || isNaN(anni) ||
+          investimento <= 0 || risparmio < 0 || crescita <= 0 || anni <= 0) {
+        alert("Per favore, inserisci solo valori numerici validi e positivi.");
+        return;
+      }
+      
+      let totale = investimento;
+      let quotaInvestita = investimento;
+      let labels = [];
+      let data = [];
+      
+      // Etichette per il grafico a torta
+      labels.push("Investimento iniziale");
+      labels.push("Interesse composto");
+      
+      // Dati per il grafico a torta
+      let interesseComposto = 0;
+      for (let i = 1; i <= anni; i++) {
+        totale += risparmio * 12; // aggiunge i risparmi annuali
+        totale *= (1 + crescita); // applica l'interesse
+        quotaInvestita += risparmio * 12;
+      }
+      interesseComposto = totale - quotaInvestita;
+      
+      // Dati per il grafico
+      data.push(quotaInvestita);
+      data.push(interesseComposto);
+
+      // Risultato
+      document.getElementById("risultato").innerHTML = `
+        Dopo ${anni} anni avrai: <br>
+        <strong>${totale.toFixed(2)} €</strong><br>
+        Quota investita: ${quotaInvestita.toFixed(2)} €<br>
+        Interesse composto: ${interesseComposto.toFixed(2)} €
+      `;
+      
+      // Se il grafico esiste già, lo distruggi prima di crearne uno nuovo
+      if (myChart) {
+        myChart.destroy();
+      }
+      
+      var ctx = document.getElementById('myChart').getContext('2d');
+      myChart = new Chart(ctx, {
+        type: 'pie',  // Cambia il tipo di grafico a pie
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: ['#4BC0C0', '#FF6384'], // Colori per le sezioni della torta
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+            },
+            tooltip: {
+              callbacks: {
+                label: function(tooltipItem) {
+                  return tooltipItem.label + ': €' + tooltipItem.raw.toFixed(2);
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    function salvaDati() {
+        let investimento = document.getElementById("investimento").value;
+        let risparmio = document.getElementById("risparmio").value;
+        let crescita = document.getElementById("crescita").value;
+        let anni = document.getElementById("anni").value;
+        let risultato = document.getElementById("risultato").innerText;
+
+        // Debug: Stampa i dati inviati
+        console.log({
+            investimento: investimento,
+            risparmio: risparmio,
+            crescita: crescita,
+            anni: anni,
+            risultato: risultato
+        });
+
+        // Prepara i dati per l'invio
+        const data = new URLSearchParams();
+        data.append("investimento", investimento);
+        data.append("risparmio", risparmio);
+        data.append("crescita", crescita);
+        data.append("anni", anni);
+        data.append("risultato", risultato);
+
+        // Esegui la richiesta di salvataggio
+        fetch('SaveDatabase.php', {
+            method: 'POST',
+            body: data
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Errore nel salvataggio dei dati.');
+            }
+            return response.text();
+        })
+        .then(data => {
+             // Mostra la risposta del server
+            alert(data);
+        })
+        .catch(error => {
+            alert('Errore: ' + error.message);
+        });
+    }
+  </script>
+</body>
+</html>
