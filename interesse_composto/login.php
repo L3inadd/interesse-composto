@@ -1,6 +1,6 @@
 <?php
 session_start();
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $host = 'localhost';
     $dbname = 'interesse_composto';
     $username = 'root';
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->close();
     $conn->close();
     exit();
-}
+  }
 ?>
 <!DOCTYPE html>
 <html lang="it">

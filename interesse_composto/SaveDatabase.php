@@ -1,48 +1,39 @@
 <?php
 session_start();
+header("Content-Type: text/plain");
 
-if (!isset($_SESSION['user_id'])) {
-    die("Devi effettuare il login per salvare i dati.");
-}
+echo "SaveDatabase.php è stato chiamato.\n";
 
-$host = 'localhost';
-$dbname = 'interesse_composto';
-$username = 'root';
-$password = '';
-
-$conn = new mysqli($host, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die("Connessione fallita: " . $conn->connect_error);
-}
-
-// Stampa dei dati POST per il debug
+// Debug: Mostra i dati ricevuti
 var_dump($_POST);
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $investimento = $_POST['investimento'];
-    $risparmio = $_POST['risparmio'];
-    $crescita = $_POST['crescita'];
-    $anni = $_POST['anni'];
-    $risultato = $_POST['risultato'];
-    $user_id = $_SESSION['user_id'];
-
-    $stmt = $conn->prepare("INSERT INTO previsioni (user_id, investimento, risparmio, crescita, anni, risultato) VALUES (?, ?, ?, ?, ?, ?)");
-    
-    // Verifica che i parametri siano corretti
-    if ($stmt === false) {
-        die('Errore nella preparazione della query: ' . $conn->error);
-    }
-
-    // Associazione dei parametri
-    $stmt->bind_param("idddis", $user_id, $investimento, $risparmio, $crescita, $anni, $risultato);
-
-    if ($stmt->execute()) {
-        echo "Dati salvati con successo!";
-    } else {
-        echo "Errore nel salvataggio: " . $stmt->error;
-    }
-    $stmt->close();
+if (!isset($_POST["investimento"], $_POST["risparmio"], $_POST["crescita"], $_POST["anni"], $_POST["risultato"])) {
+    die("Errore: Dati mancanti.");
 }
 
+// Connessione al database
+$host = "localhost";
+$dbname = "interesse_composto";
+$username = "root";
+$password = "";
+
+$conn = new mysqli($host, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Errore di connessione: " . $conn->connect_error);
+}
+
+// Prepara l'istruzione SQL per inserire i dati
+$stmt = $conn->prepare("INSERT INTO previsioni (investimento, risparmio, crescita, anni, risultato, user_id) VALUES (?, ?, ?, ?, ?, ?)");
+$stmt->bind_param("ddddsi", $_POST["investimento"], $_POST["risparmio"], $_POST["crescita"], $_POST["anni"], $_POST["risultato"], $_SESSION["user_id"]);
+
+if ($stmt->execute()) {
+    echo "Dati salvati con successo!";
+} else {
+    echo "Errore nel salvataggio: " . $stmt->error;
+}
+
+// Chiude la connessione
+$stmt->close();
 $conn->close();
 ?>
